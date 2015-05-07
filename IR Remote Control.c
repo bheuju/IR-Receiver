@@ -19,23 +19,22 @@
 		Nero WaveEditor
 	
 	Other Features:
-		Can show decoded NEC Protocol command in binary o/p
+		Can show decoded NEC Protocol command in binary o/p (see displayCode() function)
 	
 	Notes:
-		* LED at pin B0 glows on power on and blinks when a valid NEC code is received
-		* Load pins are D5, D6, D7
-		* Power button 
+		* LED at pin B0 is blinker (blinks on keyMapping, glows on operation)
+		* Load pins: B1-B5 (5 loads)
 		
 	Operation Guidelines:
-		If it is first run or power button (command - 0x2) is pressed within 1 sec of booting, then the keymapper is run indicated by blinker at pin B0
-		In keymapper:
-			Corresponding led and relay is activated to indicate that it is the one being mapped.
-			When a button is pressed, it is written to the EEPROM and also assigned to the keys[].
-			Successful mapping for a key is indicated by clearing of the blinker for about half a sec.
-			If it is again blinking, it is asking for another key; enter till the blinker stops and glows continuously 
-			Continuous glow of blinker indicates, the receiver is ready to receive commands
-		If not first run; the keys are loaded from EEPROM to keys[]; indicated by the continuous glow of the blinker.
-		Universal turn off (power button (0x2)) has been added to trun off all at once.
+		1. If it is first run (EEPROM erased) or power button (command - 0x2) is pressed within 1 sec of booting, then the keyMapper is run indicated by blinker at pin B0
+		2. In keyMapper:
+			- Corresponding led and relay is activated to indicate that it is the one being mapped.
+			- When a button is pressed, it is written to the EEPROM and also assigned to the keys[].
+			- Successful mapping for a key is indicated by clearing of the blinker for about half a sec.
+			- If it is again blinking, it is asking for another key; enter till the blinker stops and glows continuously 
+			- Continuous glow of blinker indicates, the receiver is ready to receive commands
+		3. If not first run; the keys are loaded from EEPROM to keys[]; indicated by the continuous glow of the blinker.
+		4. Universal turn off (power button (0x2)) has been added to turn off all at once.
  */ 
 
 /* TODO:
@@ -49,8 +48,8 @@
 	Create an external documentation
 	Add sleep mode to save power
 	Currently MAX_KEYS set the no. of keymapping replace keymapper of power button with open/close;
-		- open/close starts keymapper and again pressing open/close ends keymapper - can set any number of keys
-	In keymapper, instead of blinking pin B0, use blinking of individual corresponding indicator to indicate asking ok key
+		- open/close starts keyMapper and again pressing open/close ends keyMapper - can set any number of keys
+	In keyMapper, instead of blinking pin B0, use blinking of individual corresponding indicator to indicate asking of key
 */
 
 #define F_CPU	12000000
@@ -172,7 +171,6 @@ void displayCode(uint8_t code)
 	PORTB &= ~(0x06);
 	PORTC &= ~(0x3F);
 	
-	
 	//shifting to arrange the format
 	PORTB |= (code<<1) & (0x06);	//copy bit-1,0 of "code" => bit-2,1 of PORTB
 	PORTC |= (code>>2) & (0x3F);	//copy bit-7,2 of "code" => bit-5,0 of PORTC
@@ -293,7 +291,7 @@ int main(void)
 			{
 				if (command == keys[i])
 				{
-					PORTB ^= (1<<(i+1));	//(i+5) because D5-D7 are the loads
+					PORTB ^= (1<<(i+1));	//(i+1) because B1-B5 are the loads; MAX_KEYS = 5
 				}
 			}
 			
@@ -301,7 +299,7 @@ int main(void)
 			{
 				for (i = 0; i < MAX_KEYS; i++)
 				{
-					PORTB &= ~(1<<(i+1));	//direct writing to PORTB can also be done such as; PORTB &= ~(0x3E);
+					PORTB &= ~(1<<(i+1));	//direct writing to PORTB can also be done (without using loop) such as; PORTB &= ~(0x3E) -> reset B1-B5;
 				}
 			}
 			
